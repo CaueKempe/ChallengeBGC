@@ -30,7 +30,8 @@ const serverlessConfiguration: AWS = {
             Effect: 'Allow',
             Action: [
               'dynamodb:PutItem',
-              'dynamodb:BatchWriteItem'
+              'dynamodb:BatchWriteItem',
+              'dynamodb:Scan'
             ],
             Resource: 'arn:aws:dynamodb:us-east-1:*:table/ProductsTable'
           }
@@ -40,7 +41,7 @@ const serverlessConfiguration: AWS = {
   },
   functions: {
     scraper: {
-      handler: 'src/functions/scraper/handler.handler',
+      handler: 'src/functions/scraper/remoteHandler.handler',
       events: [
         {
           http: {
@@ -49,14 +50,27 @@ const serverlessConfiguration: AWS = {
           }
         }
       ]
-    }
+    },
+    getProducts: {
+      handler: 'src/functions/getProducts/handler.handler',
+      events: [
+        {
+          http: {
+            method: 'get',
+            path: 'products'
+          }
+        }
+      ]
+    }    
   },
   package: {
     individually: true,
     patterns: [
-      '!node_modules/puppeteer/**',
-      'node_modules/aws-sdk/dist/aws-sdk/**'
-    ]
+      '!node_modules/puppeteer/**', 
+      'node_modules/aws-sdk/dist/aws-sdk/**',
+      'node_modules/puppeteer-core/**', 
+      'node_modules/@sparticuz/chromium/**', 
+    ],
   },
   custom: {
     esbuild: {
