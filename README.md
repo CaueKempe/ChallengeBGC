@@ -1,5 +1,4 @@
 
----
 # Challenge BGC - Scraper Service
 
 ## Descrição
@@ -8,12 +7,14 @@ Este é um serviço de scraping utilizando Puppeteer, implementado com **Serverl
 
 ## Estrutura do Projeto
 
-A arquitetura do projeto é baseada em uma aplicação serverless, com funções separadas para realizar o scraping, armazenar dados e recuperar produtos armazenados.
+A arquitetura do projeto é baseada em uma aplicação serverless com funções separadas para realizar o scraping, armazenar dados e recuperar produtos armazenados.
 
 ### Estrutura de diretórios:
 
 ```
+
 CHALLENGE-BGC
+
 │
 ├── .serverless/                  # Arquivos gerados após o deploy
 ├── node_modules/                 # Dependências do projeto
@@ -30,6 +31,7 @@ CHALLENGE-BGC
 ├── serverless.ts                 # Configuração do Serverless Framework
 ├── package.json                  # Dependências e scripts do projeto
 └── tsconfig.json                 # Configuração do TypeScript
+
 ```
 
 ## Dependências
@@ -130,11 +132,58 @@ No arquivo `serverless.ts`, a função scraper tem permissões para interagir co
 ## Troubleshooting
 
 1. **Erro de tempo de execução do Puppeteer**: Quando estiver rodando na AWS, o Puppeteer pode ter problemas com a execução em headless mode devido a problemas com a versão do Chromium. Certifique-se de usar o pacote `@sparticuz/chromium` e configurá-lo corretamente, como mostrado em `remoteHandler.ts`.
-    
+
 2. **Timeouts ou lentidão**: As funções Lambda têm um limite de tempo de execução de 15 minutos. Se o scraping demorar mais que isso, você pode aumentar o tempo limite na configuração do `serverless.ts`.
-    
+
 3. **Permissões do DynamoDB**: Verifique se as permissões da função Lambda permitem o acesso correto à tabela do DynamoDB.
-    
+
+# Minha esperiência:
+
+Minha Experiência
+
+Durante o desenvolvimento deste projeto, enfrentei algumas dificuldades e desafios técnicos que exigiram ajustes nas dependências e no fluxo de trabalho para obter o scraper funcionando corretamente.
+
+## 1. Adaptação das Dependências
+
+A integração do Puppeteer com o AWS Lambda foi um dos maiores desafios. Embora o Puppeteer funcione bem localmente, quando executado na AWS, ele exige uma configuração mais específica, principalmente no que diz respeito à versão do Chromium utilizado. Para resolver esse problema, utilizei o pacote @sparticuz/chromium, que fornece a versão adequada do Chromium para o ambiente Lambda. Mesmo com essa adaptação, encontrei alguns desafios na execução do scraper na AWS devido a configurações de headless mode e permissões do Puppeteer. Embora eu tenha seguido a documentação, algumas configurações adicionais para garantir a execução do Chromium de forma correta na nuvem foram necessárias.
+
+## 2. Problemas com o Remote Handler
+
+O remoteHandler.ts, que foi desenvolvido para ser executado diretamente no AWS Lambda, não funcionou como esperado. Ao executar a função, o log não retornava erros claros, apenas indicava um timeout. Isso dificultou bastante a identificação da origem do problema, pois não havia um erro explícito ou mensagem de falha que eu pudesse utilizar para ajustar a implementação. Tentei ajustar os tempos de execução e as configurações da função Lambda, mas o problema persiste até o momento.
+
+## 3. Scraping na Amazon e Mercado Livre
+
+Minha primeira tentativa de scraping foi com o site da Amazon, no qual, apesar de ter conseguido configurar o scraping localmente, a Amazon acabou aplicando um throttling, bloqueando minhas requisições após algum tempo de execução. Tentei contornar isso, mas o bloqueio foi recorrente, o que me fez buscar outras fontes de dados.
+
+Em seguida, tentei realizar o scraping no Mercado Livre, mas, ao executar o scraper localmente, também encontrei problemas semelhantes, como bloqueios por parte do Mercado Livre após algumas requisições. Isso ocorreu apesar de ajustes na configuração do Puppeteer e no comportamento das requisições, o que dificultou o avanço com esse site.
+
+## 4. Sucesso com o Kabum
+
+Finalmente, consegui realizar o scraping com sucesso no site Kabum, obtendo os dados dos produtos corretamente e conseguindo enviá-los para o DynamoDB. No entanto, a versão do scraper que foi implementada via ads não funcionou como esperado. Tentei ajustar a configuração mas não obtive sucesso. No entanto, o scraper local acessando diretamente os produtos do Kabum foi bem-sucedido e funcionou conforme o esperado.
+
+## Conclusão
+
+Embora eu tenha encontrado diversos obstáculos, como bloqueios de scraping e problemas com o ambiente da AWS, consegui superar esses desafios e avançar com a maior parte do projeto. Infelizmente, o remoteHandler.ts ainda não está funcionando, e o scraping em alguns sites populares foi prejudicado por bloqueios. No entanto, o sistema está funcional para realizar o scraping de produtos do Kabum, e os dados estão sendo corretamente armazenados no DynamoDB e expostos pela API.
+
+---
+
+# Minha Experiência com a Stack
+
+Antes deste projeto eu não tinha experiência prévia com a stack que foi utilizada. Embora já tivesse trabalhado com TypeScript e Node.js em outros projetos, essa foi a minha primeira vez lidando com a combinação de AWS, Serverless Framework, DynamoDB, e o uso de funções Lambda para backend. Todo o aprendizado e desenvolvimento desse projeto foram feitos em intervalos(cerca de 30 minutos) entre minhas responsabilidades diárias, como trabalho, faculdade, atletica e projetos pessoais.
+
+O fato de não conhecer as ferramentas específicas para a construção de sistemas serverless me desafiou a aprender e adaptar rapidamente. Apesar de ter enfrentado algumas dificuldades, principalmente em relação à configuração do Serverless Framework e à execução do scraper na AWS, essa experiência me proporcionou um aprendizado valioso, especialmente no que diz respeito à integração de diferentes serviços da AWS, como o API Gateway e o DynamoDB.
+
+## Backend em TypeScript
+
+Embora essa não seja a minha primeira experiência com backend em TypeScript, posso destacar que foi o meu primeiro backend utilizando TypeScript sem a arquitetura MVC. Isso significou um novo desafio, pois tive que pensar em como estruturar o código de maneira modular, sem depender de um framework de MVC tradicional. Foi uma ótima oportunidade para aprender boas práticas de organização de código, como a separação de responsabilidades e a criação de funções independentes para tarefas específicas, como o scraper e o acesso ao banco de dados.
+
+Esse foi um passo importante no meu desenvolvimento, pois me forçou a explorar soluções mais flexíveis e adaptáveis para as necessidades do projeto, sem a estrutura rígida que o MVC costuma proporcionar.
+
+## Aprendizado Contínuo
+
+O aprendizado foi constante ao longo do processo. A cada novo desafio, busquei soluções por meio de documentação, tutoriais e experiências de outras pessoas. O Serverless Framework, por exemplo, foi algo completamente novo para mim, mas foi essencial para automatizar a criação e o deploy das funções na AWS. As dificuldades encontradas, como o manuseio do Puppeteer em ambiente serverless, exigiram pesquisas contínuas e adaptação do código até que fosse possível ter tudo funcionando de forma estável.
+
+Apesar de todas as dificuldades, cada avanço no projeto foi uma grande satisfação e uma chance de aprender algo novo, o que se tornou uma experiência gratificante no final.
 
 ## Licença
 
