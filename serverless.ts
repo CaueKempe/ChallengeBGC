@@ -1,38 +1,95 @@
 import type { AWS } from '@serverless/typescript';
 
-import hello from '@functions/hello';
-
 const serverlessConfiguration: AWS = {
-  service: 'aws-nodejs-typescript',
-  frameworkVersion: '3',
-  plugins: ['serverless-esbuild'],
+  service: 'scraper-service', 
+  frameworkVersion: '3', 
+  configValidationMode: 'error', 
+  plugins: [
+    'serverless-esbuild',
+    'serverless-offline'
+  ],
   provider: {
-    name: 'aws',
-    runtime: 'nodejs14.x',
+    name: 'aws', 
+    runtime: 'nodejs18.x',
+    architecture: 'x86_64', 
+    region: 'us-east-1',
+    memorySize: 1769, 
+    timeout: 30,
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
     },
     environment: {
-      AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
     },
+    iam: {
+      role: {
+        statements: [
+          {
+            Effect: 'Allow',
+            Action: [
+              'dynamodb:PutItem',
+              'dynamodb:BatchWriteItem'
+            ],
+            Resource: 'arn:aws:dynamodb:us-east-1:*:table/ProductsTable'
+          }
+        ]
+      }
+    }
   },
-  // import the function via paths
-  functions: { hello },
-  package: { individually: true },
+  functions: {
+    scraper: {
+      handler: 'src/functions/scraper/handler.handler',
+      events: [
+        {
+          http: {
+            method: 'POST',
+            path: 'scraper'
+          }
+        }
+      ]
+    }
+  },
+  package: {
+    individually: true,
+    patterns: [
+      '!node_modules/puppeteer/**',
+      'node_modules/aws-sdk/dist/aws-sdk/**'
+    ]
+  },
   custom: {
     esbuild: {
       bundle: true,
-      minify: false,
+      minify: true,
+      target: 'node18',
       sourcemap: true,
-      exclude: ['aws-sdk'],
-      target: 'node14',
-      define: { 'require.resolve': undefined },
-      platform: 'node',
-      concurrency: 10,
-    },
+      exclude: [
+
+      ],
+      external: [
+        'puppeteer-core',
+        '@sparticuz/chromium'
+      ]
+    }
   },
+  resources: {
+    Resources: {
+      ProductsTable: {
+        Type: 'AWS::DynamoDB::Table',
+        Properties: {
+          TableName: 'ProductsTable',
+          AttributeDefinitions: [
+            { AttributeName: 'id', AttributeType: 'S' }
+          ],
+          KeySchema: [
+            { AttributeName: 'id', KeyType: 'HASH' }
+          ],
+          BillingMode: 'PAY_PER_REQUEST'
+        }
+      }
+    }
+  }
 };
 
 module.exports = serverlessConfiguration;
