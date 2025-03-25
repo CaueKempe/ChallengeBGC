@@ -17,6 +17,7 @@
     "@middy/core": "^4.7.0",
     "@middy/http-json-body-parser": "^4.7.0",
     "@sparticuz/chromium": "^119.0.2",
+    "puppeteer": "^24.4.0",
     "puppeteer-core": "^21.7.0",
     "source-map-support": "^0.5.21"
   },
