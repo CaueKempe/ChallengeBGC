@@ -1,95 +1,143 @@
-# Serverless - AWS Node.js Typescript
 
-This project has been generated using the `aws-nodejs-typescript` template from the [Serverless framework](https://www.serverless.com/).
+---
+# Challenge BGC - Scraper Service
 
-For detailed instructions, please refer to the [documentation](https://www.serverless.com/framework/docs/providers/aws/).
+## Descrição
 
-## Installation/deployment instructions
+Este é um serviço de scraping utilizando Puppeteer, implementado com **Serverless Framework** para ser executado na AWS. O serviço realiza scraping de produtos em sites como Kabum, armazena os dados no **DynamoDB** e expõe uma API para recuperar os produtos via **AWS API Gateway**.
 
-Depending on your preferred package manager, follow the instructions below to deploy your project.
+## Estrutura do Projeto
 
-> **Requirements**: NodeJS `lts/fermium (v.14.15.0)`. If you're using [nvm](https://github.com/nvm-sh/nvm), run `nvm use` to ensure you're using the same Node version in local and in your lambda's runtime.
+A arquitetura do projeto é baseada em uma aplicação serverless, com funções separadas para realizar o scraping, armazenar dados e recuperar produtos armazenados.
 
-### Using NPM
-
-- Run `npm i` to install the project dependencies
-- Run `npx sls deploy` to deploy this stack to AWS
-
-### Using Yarn
-
-- Run `yarn` to install the project dependencies
-- Run `yarn sls deploy` to deploy this stack to AWS
-
-## Test your service
-
-This template contains a single lambda function triggered by an HTTP request made on the provisioned API Gateway REST API `/hello` route with `POST` method. The request body must be provided as `application/json`. The body structure is tested by API Gateway against `src/functions/hello/schema.ts` JSON-Schema definition: it must contain the `name` property.
-
-- requesting any other path than `/hello` with any other method than `POST` will result in API Gateway returning a `403` HTTP error code
-- sending a `POST` request to `/hello` with a payload **not** containing a string property named `name` will result in API Gateway returning a `400` HTTP error code
-- sending a `POST` request to `/hello` with a payload containing a string property named `name` will result in API Gateway returning a `200` HTTP status code with a message saluting the provided name and the detailed event processed by the lambda
-
-> :warning: As is, this template, once deployed, opens a **public** endpoint within your AWS account resources. Anybody with the URL can actively execute the API Gateway endpoint and the corresponding lambda. You should protect this endpoint with the authentication method of your choice.
-
-### Locally
-
-In order to test the hello function locally, run the following command:
-
-- `npx sls invoke local -f hello --path src/functions/hello/mock.json` if you're using NPM
-- `yarn sls invoke local -f hello --path src/functions/hello/mock.json` if you're using Yarn
-
-Check the [sls invoke local command documentation](https://www.serverless.com/framework/docs/providers/aws/cli-reference/invoke-local/) for more information.
-
-### Remotely
-
-Copy and replace your `url` - found in Serverless `deploy` command output - and `name` parameter in the following `curl` command in your terminal or in Postman to test your newly deployed application.
+### Estrutura de diretórios:
 
 ```
-curl --location --request POST 'https://myApiEndpoint/dev/hello' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "name": "Frederic"
-}'
-```
-
-## Template features
-
-### Project structure
-
-The project code base is mainly located within the `src` folder. This folder is divided in:
-
-- `functions` - containing code base and configuration for your lambda functions
-- `libs` - containing shared code base between your lambdas
-
-```
-.
-├── src
-│   ├── functions               # Lambda configuration and source code folder
-│   │   ├── hello
-│   │   │   ├── handler.ts      # `Hello` lambda source code
-│   │   │   ├── index.ts        # `Hello` lambda Serverless configuration
-│   │   │   ├── mock.json       # `Hello` lambda input parameter, if any, for local invocation
-│   │   │   └── schema.ts       # `Hello` lambda input event JSON-Schema
-│   │   │
-│   │   └── index.ts            # Import/export of all lambda configurations
-│   │
-│   └── libs                    # Lambda shared code
-│       └── apiGateway.ts       # API Gateway specific helpers
-│       └── handlerResolver.ts  # Sharable library for resolving lambda handlers
-│       └── lambda.ts           # Lambda middleware
+CHALLENGE-BGC
 │
-├── package.json
-├── serverless.ts               # Serverless service file
-├── tsconfig.json               # Typescript compiler configuration
-├── tsconfig.paths.json         # Typescript paths
-└── webpack.config.js           # Webpack configuration
+├── .serverless/                  # Arquivos gerados após o deploy
+├── node_modules/                 # Dependências do projeto
+├── src/
+│   ├── functions/
+│   │   ├── getProducts/          # Função para recuperar produtos
+│   │   │   └── handler.ts        # Lógica da função getProducts
+│   │   └── scraper/              # Função para realizar o scraping
+│   │       ├── handler.ts        # Lógica de scraping (local)
+│   │       └── remoteHandler.ts  # Lógica de scraping (para AWS)
+├── libs/                         # Bibliotecas auxiliares
+├── .gitignore                    # Arquivos a serem ignorados pelo git
+├── README.md                     # Documentação do projeto
+├── serverless.ts                 # Configuração do Serverless Framework
+├── package.json                  # Dependências e scripts do projeto
+└── tsconfig.json                 # Configuração do TypeScript
 ```
 
-### 3rd party libraries
+## Dependências
 
-- [json-schema-to-ts](https://github.com/ThomasAribart/json-schema-to-ts) - uses JSON-Schema definitions used by API Gateway for HTTP request validation to statically generate TypeScript types in your lambda's handler code base
-- [middy](https://github.com/middyjs/middy) - middleware engine for Node.Js lambda. This template uses [http-json-body-parser](https://github.com/middyjs/middy/tree/master/packages/http-json-body-parser) to convert API Gateway `event.body` property, originally passed as a stringified JSON, to its corresponding parsed object
-- [@serverless/typescript](https://github.com/serverless/typescript) - provides up-to-date TypeScript definitions for your `serverless.ts` service file
+O projeto utiliza as seguintes dependências:
 
-### Advanced usage
+- `puppeteer-core` - Para realizar o scraping na web.
+- `@sparticuz/chromium` - Fornece o binário do Chromium necessário para rodar o Puppeteer na AWS Lambda.
+- `@aws-sdk/client-dynamodb` - SDK da AWS para interagir com o DynamoDB.
+- `serverless` - Framework para deploy e gestão de funções AWS Lambda.
+- `serverless-esbuild` - Plugin para empacotar o código TypeScript.
+- `serverless-offline` - Para emular a API Gateway localmente.
 
-Any tsconfig.json can be used, but if you do, set the environment variable `TS_NODE_CONFIG` for building the application, eg `TS_NODE_CONFIG=./tsconfig.app.json npx serverless webpack`
+## Como Rodar o Projeto
+
+### 1. Pré-requisitos
+
+- Node.js (>= 18.0.0)
+- AWS CLI configurado com credenciais
+- Serverless Framework instalado globalmente (`npm install -g serverless`)
+
+### 2. Instalar Dependências
+
+Execute o seguinte comando para instalar as dependências:
+
+```bash
+npm install
+```
+
+### 3. Configuração do DynamoDB
+
+Certifique-se de que a tabela do DynamoDB `ProductsTable` está criada corretamente na AWS. A tabela é criada automaticamente pelo Serverless durante o deploy, mas você pode configurar manualmente, se necessário.
+
+### 4. Executando Localmente (Modo Offline)
+
+Para rodar a API localmente com o **Serverless Offline**, use o comando abaixo:
+
+```bash
+npm run offline
+```
+
+### 5. Deploy na AWS
+
+Para realizar o deploy na AWS, execute:
+
+```bash
+npm run deploy
+```
+
+O comando irá empacotar o código e subir a aplicação no AWS Lambda, criando as funções necessárias e o API Gateway.
+
+### 6. Testar o Scraper
+
+Após o deploy, você pode enviar uma requisição **POST** para o endpoint `/scraper` para acionar o scraper e coletar dados dos produtos. A função será executada e os dados serão salvos no DynamoDB.
+
+### 7. Recuperar Produtos
+
+Você pode recuperar os produtos armazenados no DynamoDB enviando uma requisição **GET** para o endpoint `/products`.
+
+## Funções
+
+### scraper
+
+A função `scraper` realiza o scraping de produtos no site Kabum, extraindo o título, preço, URL e imagem dos produtos. Os dados extraídos são enviados para o DynamoDB.
+
+- **Endpoint:** `/scraper`
+- **Método HTTP:** `POST`
+
+### getProducts
+
+A função `getProducts` recupera os produtos armazenados na tabela DynamoDB e retorna em formato JSON.
+
+- **Endpoint:** `/products`
+- **Método HTTP:** `GET`
+
+## Arquivos Importantes
+
+### serverless.ts
+
+Configuração do **Serverless Framework**, onde são definidos os recursos da AWS (funções Lambda, API Gateway e DynamoDB). O arquivo também inclui as permissões necessárias para que as funções possam interagir com o DynamoDB.
+
+### scraper/remoteHandler.ts
+
+Função que é executada na AWS Lambda. Utiliza o Puppeteer para acessar e extrair dados dos produtos do Kabum e envia esses dados para o DynamoDB.
+
+### scraper/handler.ts
+
+Função similar à `remoteHandler.ts`, mas que pode ser executada localmente com `puppeteer`. Essa função é útil para testar o scraper antes de rodar na AWS.
+
+### getProducts/handler.ts
+
+Função que acessa o DynamoDB para recuperar os produtos armazenados e retorna esses dados via API Gateway.
+
+## Configuração de Permissões
+
+No arquivo `serverless.ts`, a função scraper tem permissões para interagir com o DynamoDB. Certifique-se de que a política de IAM definida permita que a função Lambda tenha acesso à tabela `ProductsTable`.
+
+## Troubleshooting
+
+1. **Erro de tempo de execução do Puppeteer**: Quando estiver rodando na AWS, o Puppeteer pode ter problemas com a execução em headless mode devido a problemas com a versão do Chromium. Certifique-se de usar o pacote `@sparticuz/chromium` e configurá-lo corretamente, como mostrado em `remoteHandler.ts`.
+    
+2. **Timeouts ou lentidão**: As funções Lambda têm um limite de tempo de execução de 15 minutos. Se o scraping demorar mais que isso, você pode aumentar o tempo limite na configuração do `serverless.ts`.
+    
+3. **Permissões do DynamoDB**: Verifique se as permissões da função Lambda permitem o acesso correto à tabela do DynamoDB.
+    
+
+## Licença
+
+MIT - Veja o arquivo LICENSE para mais detalhes.
+
+---
